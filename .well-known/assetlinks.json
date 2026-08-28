@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.ivaruf.swirls",
+      "sha256_cert_fingerprints": [
+        "9A:29:40:DD:E5:D7:F4:40:C1:20:CA:FA:58:E1:13:AA:15:03:87:39:69:F4:71:FB:BD:0A:26:37:FE:1D:54:64"
+      ]
+    }
+  }
+]
