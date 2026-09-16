@@ -1,5 +1,192 @@
 <!doctype html>
+<html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=/swirls/">
-<title>ivaruf</title>
-<a href="/swirls/">swirls</a>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GOPHER CLOUD — the sky is the arcade</title>
+<meta name="description" content="A small free arcade in the sky. No ads, no accounts, nothing to sign up for.">
+<meta name="theme-color" content="#060910">
+<link rel="icon" href="assets/icon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+
+<!-- =============================================================================
+  The front door of gophercloud.games.
+
+  This repo is `ivaruf.github.io`, which is why one page in it decides rather a
+  lot: its CNAME file claims the domain for the whole account, so every project
+  site lands underneath it as gophercloud.games/<slug>/. It used to be four
+  lines of meta-refresh pointing at /swirls/, which was correct while it was a
+  leftover and quite wrong the moment the domain became something to hand
+  people. A visitor typing the bare name should not arrive inside one game.
+
+  Deliberately a page and not another redirect. /arcade/ is 2.5 MB of Babylon
+  and WebGL before it shows anything, so a bare domain that bounces straight
+  into it gives a phone on a slow train a white screen and no explanation. This
+  costs one 150 KB picture, says what the place is, and lets the visitor choose
+  the moment they spend the download.
+
+  Colours are the arcade's own (css/style.css): --enamel #060910, --wall
+  #0e1122, --mint #12d9b8, --ivory #d9dbbf. The portrait's #7e9dd6 is sampled
+  from gopher.png's own flat background rather than picked by eye, exactly as
+  the parents dialog documents — the art is contained, not cropped, so every
+  edge of the frame is this colour meeting the same colour inside the image. A
+  near miss draws a visible letterbox around the gopher. Re-sample if the
+  portrait is ever redrawn.
+
+  No fonts, no scripts, no analytics, nothing third-party: the hub's first rule
+  applies hardest to the page everybody sees first.
+============================================================================== -->
+
+<style>
+  :root {
+    --enamel: #060910;
+    --wall: #0e1122;
+    --mint: #12d9b8;
+    --ivory: #d9dbbf;
+    --ink: #eef2ee;
+    --muted: #8e9aa8;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    /* The arcade's night sky, flattened: a lit horizon low down and the dark
+       of the room above it, so the page feels like the same weather. */
+    background:
+      radial-gradient(120% 80% at 50% 118%, #1b2f4d 0%, transparent 62%),
+      linear-gradient(170deg, var(--wall), var(--enamel));
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  main {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(18px, 4vw, 30px);
+    padding:
+      max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    text-align: center;
+  }
+
+  .portrait {
+    width: min(232px, 46vw);
+    aspect-ratio: 708 / 890;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid #ffffff2e;
+    background: #7e9dd6;
+    box-shadow: 0 18px 50px #0006, 0 0 40px #12d9b81f;
+  }
+
+  .portrait img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  .words { display: grid; gap: 10px; justify-items: center; }
+
+  /* The back wall's sign, in type: wide-tracked caps under a mint glow. */
+  h1 {
+    margin: 0;
+    font-size: clamp(30px, 8vw, 54px);
+    font-weight: 300;
+    letter-spacing: .12em;
+    line-height: 1.1;
+    color: #dffaf4;
+    text-shadow: 0 0 18px #12d9b8bf, 0 0 46px #12d9b859;
+  }
+
+  .sub {
+    margin: 0;
+    font-size: clamp(11px, 2.6vw, 13px);
+    letter-spacing: .5em;
+    /* Tracking pushes the last letter off-centre; the indent pays it back. */
+    text-indent: .5em;
+    color: var(--ivory);
+    opacity: .85;
+  }
+
+  .blurb {
+    margin: 4px 0 0;
+    max-width: 34ch;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .enter {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 15px 34px;
+    border-radius: 12px;
+    border: 1px solid #12d9b88c;
+    background: linear-gradient(180deg, #12d9b838, #12d9b812);
+    box-shadow: 0 0 22px #12d9b847, inset 0 1px 0 #ffffff1f;
+    color: #d9fff7;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color .2s ease, box-shadow .2s ease, transform .12s ease;
+  }
+
+  .enter:hover { background: linear-gradient(180deg, #12d9b855, #12d9b81f); }
+  .enter:active { transform: translateY(1px); }
+  .enter:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+  .fine {
+    margin: 0;
+    font-size: 11.5px;
+    letter-spacing: .06em;
+    color: #6f7b88;
+  }
+
+  /* A phone on its side is ~390px tall and the column would run off the bottom,
+     taking the way in with it. It has width where it lacks height, so the
+     gopher stands beside the words instead of above them. maxgear's rule. */
+  @media (orientation: landscape) and (max-height: 560px) {
+    main { flex-direction: row; gap: clamp(20px, 5vw, 44px); }
+    .portrait { width: min(190px, 30vw); }
+    .words { justify-items: start; text-align: left; }
+    h1 { font-size: clamp(26px, 5.4vw, 40px); }
+    .blurb { font-size: 13.5px; }
+    .enter { padding: 13px 26px; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .portrait { animation: drift 7s ease-in-out infinite; }
+    /* Six pixels. It should read as a cloud holding still, not as a page that
+       moves — the arcade behind this does the actual flying. */
+    @keyframes drift {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+  }
+</style>
+
+<main>
+  <div class="portrait">
+    <img src="assets/gopher.png" width="708" height="890"
+         alt="The Gopher, in a top hat and monocle, standing on a little cloud">
+  </div>
+
+  <div class="words">
+    <h1>GOPHER CLOUD</h1>
+    <p class="sub">THE SKY IS THE ARCADE</p>
+    <p class="blurb">A small arcade up in the clouds, with a gopher who will show you around. Everything here is free to play.</p>
+    <a class="enter" href="/arcade/">Walk in</a>
+    <p class="fine">No ads · no accounts · nothing to sign up for</p>
+  </div>
+</main>
+</html>
