@@ -1,10 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="nb">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GOPHER CLOUD — the sky is the arcade</title>
-<meta name="description" content="A small free arcade in the sky. No ads, no accounts, nothing to sign up for.">
+<title>GOPHER CLOUD — himmelen er arkaden</title>
+<meta name="description" content="En liten, gratis arkade i skyene. Spill rett i nettleseren — ingen reklame, ingen konto, ingen sporing.">
 <meta name="theme-color" content="#060910">
+<meta property="og:title" content="GOPHER CLOUD — himmelen er arkaden">
+<meta property="og:description" content="En liten, gratis arkade i skyene. Ingen reklame, ingen konto, ingen sporing.">
+<meta property="og:image" content="https://gophercloud.games/assets/gopher.png">
+<meta property="og:url" content="https://gophercloud.games/">
 <link rel="icon" href="assets/icon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
 
@@ -13,161 +17,479 @@
 
   This repo is `ivaruf.github.io`, which is why one page in it decides rather a
   lot: its CNAME file claims the domain for the whole account, so every project
-  site lands underneath it as gophercloud.games/<slug>/. It used to be four
-  lines of meta-refresh pointing at /swirls/, which was correct while it was a
-  leftover and quite wrong the moment the domain became something to hand
-  people. A visitor typing the bare name should not arrive inside one game.
+  site lands underneath it as gophercloud.games/<slug>/. A visitor typing the
+  bare name should not arrive inside one game, and should not arrive inside the
+  arcade either: /arcade/ is 2.5 MB of Babylon and WebGL before it shows
+  anything, so a bare domain that bounced straight into it would give a phone on
+  a slow train a white screen and no explanation. This page says what the place
+  is, shows what is in it, and lets the visitor choose the moment they spend
+  that download. Entering the arcade stays the one big button.
 
-  Deliberately a page and not another redirect. /arcade/ is 2.5 MB of Babylon
-  and WebGL before it shows anything, so a bare domain that bounces straight
-  into it gives a phone on a slow train a white screen and no explanation. This
-  costs one 150 KB picture, says what the place is, and lets the visitor choose
-  the moment they spend the download.
+  THE GAME LIST IS KEPT BY HAND. A slug added to arcade/games.json needs a card
+  here too, and a game deployed but not promoted belongs under "Under arbeid".
+  Each card's picture is a 960x600 WebP shot with tools/review/shot.sh at
+  1280x800, and its icon is the game's own 192 px icon, both in assets/games/.
+
+  TWO LANGUAGES, NORWEGIAN FIRST, as everywhere in the hub (games/CLAUDE.md §2).
+  Every piece of copy is written twice, side by side, as a pair of siblings
+  carrying lang="nb" and lang="en"; the rule just under :root hides whichever
+  one is not <html lang>. So switching is one attribute, live, with no string
+  table and no repaint code, and with scripts off the page still reads in
+  Norwegian. The choice lives in `arcade.lang.v1`, the one key the whole hub
+  shares, so a visitor who picks English here walks into an English arcade.
 
   Colours are the arcade's own (css/style.css): --enamel #060910, --wall
   #0e1122, --mint #12d9b8, --ivory #d9dbbf. The portrait's #7e9dd6 is sampled
   from gopher.png's own flat background rather than picked by eye, exactly as
-  the parents dialog documents — the art is contained, not cropped, so every
-  edge of the frame is this colour meeting the same colour inside the image. A
-  near miss draws a visible letterbox around the gopher. Re-sample if the
-  portrait is ever redrawn.
+  the parents dialog documents. Re-sample if the portrait is ever redrawn.
 
-  No fonts, no scripts, no analytics, nothing third-party: the hub's first rule
-  applies hardest to the page everybody sees first.
+  No fonts, no analytics, nothing third-party, and one small inline script for
+  the language: the hub's first rule applies hardest to the page everybody
+  sees first.
 ============================================================================== -->
+
+<script>
+  // Before first paint, so an English visitor never sees a flash of Norwegian.
+  (function () {
+    var TITLE = { nb: 'GOPHER CLOUD — himmelen er arkaden', en: 'GOPHER CLOUD — the sky is the arcade' };
+    function set(l, save) {
+      if (l !== 'nb' && l !== 'en') l = 'nb';
+      document.documentElement.lang = l;
+      document.title = TITLE[l];
+      if (save) try { localStorage.setItem('arcade.lang.v1', l); } catch (e) {}
+      var b = document.querySelectorAll('[data-set-lang]');
+      for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', String(b[i].getAttribute('data-set-lang') === l));
+    }
+    var stored = null;
+    try { stored = localStorage.getItem('arcade.lang.v1'); } catch (e) {}
+    set(stored);
+    document.addEventListener('DOMContentLoaded', function () { set(document.documentElement.lang); });
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-set-lang]');
+      if (b) set(b.getAttribute('data-set-lang'), true);
+    });
+  })();
+</script>
 
 <style>
   :root {
     --enamel: #060910;
     --wall: #0e1122;
+    --panel: #11162a;
+    --line: #ffffff17;
     --mint: #12d9b8;
     --ivory: #d9dbbf;
     --ink: #eef2ee;
-    --muted: #8e9aa8;
+    --muted: #97a3b1;
+    --faint: #6f7b88;
+    --gutter: max(20px, env(safe-area-inset-left), env(safe-area-inset-right));
     color-scheme: dark;
   }
 
+  /* The one rule the two languages hang on (see the header comment). The
+     language buttons carry lang for pronunciation and are exempt. */
+  html[lang="nb"] [lang="en"]:not([data-set-lang]),
+  html[lang="en"] [lang="nb"]:not([data-set-lang]) { display: none !important; }
+
   * { box-sizing: border-box; }
 
-  html, body { height: 100%; }
+  html { -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 
   body {
     margin: 0;
-    /* The arcade's night sky, flattened: a lit horizon low down and the dark
-       of the room above it, so the page feels like the same weather. */
+    background: var(--enamel);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--mint); }
+  img { max-width: 100%; }
+  :focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+  .wrap { width: min(1180px, 100%); margin: 0 auto; padding-inline: var(--gutter); }
+
+  /* ---------------------------------------------------------------- top bar */
+
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding-top: env(safe-area-inset-top);
+    background: #060910d9;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .bar .wrap { display: flex; align-items: center; gap: 18px; min-height: 60px; }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #dffaf4;
+    text-decoration: none;
+    font-weight: 400;
+    letter-spacing: .14em;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+
+  .bar nav { display: flex; gap: 4px; margin-left: auto; }
+  .bar nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+  .bar nav a:hover { color: var(--ink); background: #ffffff0d; }
+
+  /* Norsk first, two equal buttons, flag and endonym (games/CLAUDE.md §2). */
+  .lang {
+    display: flex;
+    padding: 3px;
+    gap: 3px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #ffffff08;
+  }
+  .lang button {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .lang button svg { width: 20px; height: 14px; border-radius: 2px; flex: none; }
+  .lang button[aria-pressed="true"] { background: #12d9b826; color: var(--ink); box-shadow: inset 0 0 0 1px #12d9b866; }
+  .lang button:not([aria-pressed="true"]):hover { color: var(--ink); }
+
+  /* --------------------------------------------------------------- the hero */
+
+  .hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    /* The arcade's night sky: a lit horizon low down, the dark room above. */
     background:
       radial-gradient(120% 80% at 50% 118%, #1b2f4d 0%, transparent 62%),
       linear-gradient(170deg, var(--wall), var(--enamel));
-    color: var(--ink);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -webkit-text-size-adjust: 100%;
+  }
+  /* The real arcade behind the words (assets/hero.webp, the welcome view shot
+     with tools/review/shot.sh), blurred and dimmed so it reads as a place
+     and not as a second thing to read. Overhangs the box so the blur has no
+     soft edge. */
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: -16px;
+    z-index: -1;
+    background:
+      linear-gradient(180deg, #060910b3 0%, #06091080 45%, #060910 100%),
+      url(assets/hero.webp) center 35% / cover no-repeat;
+    filter: blur(4px);
   }
 
-  main {
-    min-height: 100%;
+  .hero .wrap {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: clamp(18px, 4vw, 30px);
-    padding:
-      max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
-      max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
-    text-align: center;
+    gap: clamp(28px, 6vw, 72px);
+    padding-block: clamp(48px, 9vw, 112px);
   }
 
   .portrait {
-    width: min(232px, 46vw);
+    width: min(260px, 32vw);
     aspect-ratio: 708 / 890;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
+    flex: none;
     overflow: hidden;
-    border-radius: 20px;
+    border-radius: 22px;
     border: 1px solid #ffffff2e;
     background: #7e9dd6;
-    box-shadow: 0 18px 50px #0006, 0 0 40px #12d9b81f;
+    box-shadow: 0 24px 60px #0008, 0 0 50px #12d9b826;
   }
-
   .portrait img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
-  .words { display: grid; gap: 10px; justify-items: center; }
+  .words { display: grid; gap: 14px; justify-items: start; }
+
+  .eyebrow {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--mint);
+  }
 
   /* The back wall's sign, in type: wide-tracked caps under a mint glow. */
   h1 {
     margin: 0;
-    font-size: clamp(30px, 8vw, 54px);
+    font-size: clamp(36px, 7vw, 68px);
     font-weight: 300;
     letter-spacing: .12em;
-    line-height: 1.1;
+    line-height: 1.05;
     color: #dffaf4;
     text-shadow: 0 0 18px #12d9b8bf, 0 0 46px #12d9b859;
   }
 
   .sub {
-    margin: 0;
-    font-size: clamp(11px, 2.6vw, 13px);
-    letter-spacing: .5em;
-    /* Tracking pushes the last letter off-centre; the indent pays it back. */
-    text-indent: .5em;
+    margin: -4px 0 0;
+    font-size: clamp(11px, 1.6vw, 13px);
+    letter-spacing: .45em;
+    text-transform: uppercase;
     color: var(--ivory);
     opacity: .85;
   }
 
-  .blurb {
-    margin: 4px 0 0;
-    max-width: 34ch;
-    font-size: 15px;
-    line-height: 1.55;
-    color: var(--muted);
-  }
+  .blurb { margin: 6px 0 0; max-width: 46ch; font-size: clamp(15px, 1.8vw, 18px); color: #c4ccd6; }
 
-  .enter {
-    display: inline-block;
-    margin-top: 2px;
-    padding: 15px 34px;
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+
+  .enter, .ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 30px;
     border-radius: 12px;
-    border: 1px solid #12d9b88c;
-    background: linear-gradient(180deg, #12d9b838, #12d9b812);
-    box-shadow: 0 0 22px #12d9b847, inset 0 1px 0 #ffffff1f;
-    color: #d9fff7;
-    font: inherit;
     font-size: 15px;
     font-weight: 600;
-    letter-spacing: .16em;
+    letter-spacing: .14em;
     text-transform: uppercase;
     text-decoration: none;
-    transition: background-color .2s ease, box-shadow .2s ease, transform .12s ease;
+    transition: background .2s ease, box-shadow .2s ease, transform .12s ease;
+  }
+  .enter {
+    border: 1px solid #12d9b8a6;
+    background: linear-gradient(180deg, #12d9b84d, #12d9b81a);
+    box-shadow: 0 0 26px #12d9b859, inset 0 1px 0 #ffffff26;
+    color: #e6fffa;
+  }
+  .enter:hover { background: linear-gradient(180deg, #12d9b870, #12d9b82b); box-shadow: 0 0 36px #12d9b880, inset 0 1px 0 #ffffff26; }
+  .enter:active, .ghost:active { transform: translateY(1px); }
+  .enter svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .ghost { border: 1px solid #ffffff2e; color: var(--ink); background: #ffffff0a; letter-spacing: .1em; }
+  .ghost:hover { background: #ffffff17; }
+
+  .promises { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
+  .promises li::before { content: "✓"; color: var(--mint); margin-right: 7px; }
+
+  /* ------------------------------------------------------------- sections */
+
+  section { scroll-margin-top: 72px; }
+  .section { padding-block: clamp(56px, 8vw, 96px); }
+  .section + .section { border-top: 1px solid var(--line); }
+
+  .sec-head { display: grid; gap: 10px; margin-bottom: clamp(28px, 4vw, 44px); max-width: 64ch; }
+  h2 { margin: 0; font-size: clamp(28px, 4vw, 40px); font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
+  .sec-head p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 16px; }
+
+  /* --------------------------------------------------------------- cards */
+
+  /* Peers, so one size: every card in a row stretches to the tallest, and the
+     play button sits on the bottom edge so the buttons line up (§2's
+     "anything that is one logical group is laid out as one"). */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 22px; }
+
+  .card {
+    --accent: var(--mint);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #151b33, var(--panel));
+    transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .card:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: 0 18px 44px #0009; }
+  @media (prefers-reduced-motion: no-preference) { .card:hover { transform: translateY(-3px); } }
+
+  .shot { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; background: #0b0f1e; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+  @media (prefers-reduced-motion: no-preference) { .card:hover .shot img { transform: scale(1.04); } }
+  .shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #11162acc); pointer-events: none; }
+
+  .badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #000000a6;
+    border: 1px solid #ffffff33;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #ffd27a;
   }
 
-  .enter:hover { background: linear-gradient(180deg, #12d9b855, #12d9b81f); }
-  .enter:active { transform: translateY(1px); }
-  .enter:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+  .card-body { display: flex; flex-direction: column; gap: 14px; flex: 1; padding: 0 20px 20px; }
 
-  .fine {
-    margin: 0;
-    font-size: 11.5px;
-    letter-spacing: .06em;
-    color: #6f7b88;
+  .title { display: flex; align-items: center; gap: 14px; margin-top: -26px; position: relative; }
+  .title .icon {
+    width: 60px;
+    height: 60px;
+    flex: none;
+    border-radius: 14px;
+    border: 2px solid var(--panel);
+    background: var(--panel);
+    box-shadow: 0 6px 16px #0008;
+  }
+  .title .icon.blank { display: grid; place-items: center; color: var(--accent); font-size: 26px; font-weight: 700; }
+  .title > div { padding-top: 22px; min-width: 0; }
+  h3 { margin: 0; font-size: 20px; line-height: 1.2; letter-spacing: .01em; }
+  .tagline { margin: 2px 0 0; font-size: 14px; color: var(--accent); }
+
+  .about { margin: 0; font-size: 15px; color: #c4ccd6; }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .meta li {
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #ffffff08;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .meta li.online { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  /* The rules row and the play button sit on the card's bottom edge, so they
+     line up across a row however long the blurb above them runs. */
+  details { margin-top: auto; border-top: 1px solid var(--line); padding-top: 12px; }
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    border-radius: 6px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    transform: rotate(-45deg);
+    transition: transform .2s ease;
+    margin: 0 4px 0 2px;
+  }
+  details[open] summary::before { transform: rotate(45deg); }
+  details ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14.5px; color: #c4ccd6; }
+  details li::marker { color: var(--accent); }
+  .kid { margin: 10px 0 0; font-size: 13.5px; color: var(--muted); font-style: italic; }
+
+  .play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    border-radius: 11px;
+    /* Plain first: an old iPad without color-mix() drops the line after. */
+    border: 1px solid #ffffff38;
+    background: #ffffff0d;
+    border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    transition: background .2s ease;
+  }
+  .play:hover { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+  .play svg { width: 16px; height: 16px; fill: currentColor; }
+
+  .wip-note {
+    margin: 0 0 22px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px dashed #ffd27a59;
+    background: #ffd27a0d;
+    color: #e9dcc0;
+    font-size: 14.5px;
+    max-width: 70ch;
   }
 
-  /* A phone on its side is ~390px tall and the column would run off the bottom,
-     taking the way in with it. It has width where it lacks height, so the
-     gopher stands beside the words instead of above them. maxgear's rule. */
+  /* --------------------------------------------------------------- about */
+
+  .principles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-bottom: clamp(40px, 6vw, 64px); }
+  .principle { padding: 22px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); }
+  .principle svg { width: 28px; height: 28px; fill: none; stroke: var(--mint); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .principle h3 { margin: 12px 0 6px; font-size: 17px; }
+  .principle p { margin: 0; font-size: 14.5px; color: var(--muted); }
+
+  .letter { display: grid; grid-template-columns: 220px 1fr; gap: clamp(28px, 5vw, 56px); align-items: start; }
+  .letter .portrait { width: 100%; position: sticky; top: 92px; }
+  .letter-text { max-width: 68ch; }
+  .letter-text h3 { font-size: 24px; margin-bottom: 14px; }
+  .letter-text p { margin: 0 0 16px; color: #c4ccd6; font-size: 16px; }
+  .letter-text .lead { font-size: 19px; color: var(--ink); }
+  .sign { color: var(--ivory); font-style: italic; }
+
+  /* -------------------------------------------------------------- footer */
+
+  footer { border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); background: #04060c; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 32px; justify-content: space-between; align-items: center; padding-block: 34px; font-size: 13.5px; color: var(--faint); }
+  footer p { margin: 0; }
+  footer a { color: var(--muted); }
+
+  /* ------------------------------------------------------------- narrower */
+
+  @media (max-width: 900px) {
+    .hero .wrap { flex-direction: column; text-align: center; }
+    .words { justify-items: center; }
+    .ctas, .promises { justify-content: center; }
+    .portrait { width: min(200px, 48vw); }
+    .letter { grid-template-columns: 1fr; }
+    .letter .portrait { display: none; }
+  }
+
+  @media (max-width: 620px) {
+    .bar nav { display: none; }
+    .lang { margin-left: auto; }
+    .lang .endonym { display: none; }
+    .lang button { padding: 0 12px; }
+    .ctas { flex-direction: column; align-items: stretch; width: min(100%, 340px); }
+  }
+
+  /* A phone on its side is ~390px tall: the gopher stands beside the words
+     instead of above them, so the way in is still above the fold. */
   @media (orientation: landscape) and (max-height: 560px) {
-    main { flex-direction: row; gap: clamp(20px, 5vw, 44px); }
-    .portrait { width: min(190px, 30vw); }
-    .words { justify-items: start; text-align: left; }
-    h1 { font-size: clamp(26px, 5.4vw, 40px); }
-    .blurb { font-size: 13.5px; }
-    .enter { padding: 13px 26px; }
+    .hero .wrap { flex-direction: row; text-align: left; padding-block: 28px; }
+    .words { justify-items: start; gap: 10px; }
+    .ctas { flex-direction: row; width: auto; justify-content: start; }
+    .promises { justify-content: start; }
+    .portrait { width: min(170px, 26vw); }
+    h1 { font-size: clamp(28px, 5vw, 40px); }
+    .blurb { font-size: 14.5px; }
+    .enter, .ghost { min-height: 44px; padding: 0 22px; }
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .portrait { animation: drift 7s ease-in-out infinite; }
-    /* Six pixels. It should read as a cloud holding still, not as a page that
-       moves — the arcade behind this does the actual flying. */
+    .hero .portrait { animation: drift 7s ease-in-out infinite; }
+    /* Six pixels. A cloud holding still, not a page that moves. */
     @keyframes drift {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-6px); }
@@ -175,18 +497,301 @@
   }
 </style>
 
-<main>
-  <div class="portrait">
-    <img src="assets/gopher.png" width="708" height="890"
-         alt="The Gopher, in a top hat and monocle, standing on a little cloud">
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/icon-180.png" alt="" width="30" height="30">GOPHER CLOUD</a>
+    <nav>
+      <a href="#spill"><span lang="nb">Spill</span><span lang="en">Games</span></a>
+      <a href="#under-arbeid"><span lang="nb">Under arbeid</span><span lang="en">In the works</span></a>
+      <a href="#om"><span lang="nb">Om</span><span lang="en">About</span></a>
+    </nav>
+    <div class="lang" role="group" aria-label="Språk / Language">
+      <button type="button" data-set-lang="nb" lang="nb" aria-pressed="true" title="Norsk">
+        <svg viewBox="0 0 22 16" aria-hidden="true">
+          <rect width="22" height="16" fill="#ba0c2f"/>
+          <path d="M6 0h4v16H6zM0 6h22v4H0z" fill="#fff"/>
+          <path d="M7 0h2v16H7zM0 7h22v2H0z" fill="#00205b"/>
+        </svg><span class="endonym">Norsk</span>
+      </button>
+      <button type="button" data-set-lang="en" lang="en" aria-pressed="false" title="English">
+        <svg viewBox="0 0 60 30" aria-hidden="true">
+          <clipPath id="uk-clip"><path d="M0 0v30h60V0z"/></clipPath>
+          <clipPath id="uk-diag"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath>
+          <g clip-path="url(#uk-clip)">
+            <path d="M0 0v30h60V0z" fill="#012169"/>
+            <path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/>
+            <path d="M0 0l60 30m0-30L0 30" clip-path="url(#uk-diag)" stroke="#c8102e" stroke-width="4"/>
+            <path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>
+            <path d="M30 0v30M0 15h60" stroke="#c8102e" stroke-width="6"/>
+          </g>
+        </svg><span class="endonym">English</span>
+      </button>
+    </div>
   </div>
+</header>
 
-  <div class="words">
-    <h1>GOPHER CLOUD</h1>
-    <p class="sub">THE SKY IS THE ARCADE</p>
-    <p class="blurb">A small arcade up in the clouds, with a gopher who will show you around. Everything here is free to play.</p>
-    <a class="enter" href="/arcade/">Walk in</a>
-    <p class="fine">No ads · no accounts · nothing to sign up for</p>
-  </div>
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div class="portrait">
+        <!-- Decorative: the h1 beside it already says who this is, and an alt
+             can only be in one language. -->
+        <img src="assets/gopher.png" width="708" height="890" alt="">
+      </div>
+      <div class="words">
+        <p class="eyebrow"><span lang="nb">Gratis spill i nettleseren</span><span lang="en">Free games in your browser</span></p>
+        <h1>GOPHER CLOUD</h1>
+        <p class="sub"><span lang="nb">Himmelen er arkaden</span><span lang="en">The sky is the arcade</span></p>
+        <p class="blurb">
+          <span lang="nb">En liten arkade oppe i skyene, med en gopher som viser deg rundt. Alle spillene er gratis, og de kjører rett i nettleseren på nettbrett, telefon og datamaskin.</span>
+          <span lang="en">A small arcade up in the clouds, with a gopher who will show you around. Every game is free, and they all run right in the browser on tablets, phones and computers.</span>
+        </p>
+        <div class="ctas">
+          <a class="enter" href="/arcade/">
+            <span lang="nb">Gå inn i arkaden</span><span lang="en">Enter the arcade</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+          </a>
+          <a class="ghost" href="#spill"><span lang="nb">Se spillene</span><span lang="en">See the games</span></a>
+        </div>
+        <ul class="promises">
+          <li><span lang="nb">Ingen reklame</span><span lang="en">No ads</span></li>
+          <li><span lang="nb">Ingen konto</span><span lang="en">No accounts</span></li>
+          <li><span lang="nb">Ingen sporing</span><span lang="en">No tracking</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="spill">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span lang="nb">I arkaden</span><span lang="en">In the arcade</span></p>
+        <h2><span lang="nb">Spillene</span><span lang="en">The games</span></h2>
+        <p>
+          <span lang="nb">Alle er gratis, hele veien. Åpne «Slik spiller du» for reglene, eller trykk Spill og hopp rett inn.</span>
+          <span lang="en">All free, all the way through. Open “How to play” for the rules, or press Play and jump straight in.</span>
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card" style="--accent:#63d6b5">
+          <a class="shot" href="/fishtank/" tabindex="-1" aria-hidden="true"><img src="assets/games/fishtank.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/fishtank-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>Fishtank</h3><p class="tagline"><span lang="nb">Spis, voks, og ikke bli spist.</span><span lang="en">Eat, grow, and don&#x27;t get eaten.</span></p></div></div>
+            <p class="about"><span lang="nb">Et lite 3D-akvarium der du selv er en av fiskene: spis de små, voks deg stor, og hold deg unna de store. Spill alene, eller del en kode og få vennene dine inn i samme akvarium.</span><span lang="en">A little 3D aquarium where you are one of the fish: eat the small ones, grow big, and keep clear of the big ones. Play alone, or share a code and bring your friends into the same tank.</span></p>
+            <ul class="meta"><li><span lang="nb">1–16 spillere</span><span lang="en">1–16 players</span></li><li><span lang="nb">Berøring · tastatur og mus</span><span lang="en">Touch · keyboard and mouse</span></li><li class="online"><span lang="nb">Spill over nett</span><span lang="en">Play online</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Svøm inn i fisker som er mindre enn deg, så spiser du dem og vokser.</li><li>Alt som er større enn deg, kan spise deg. Da er du tilbake etter fem sekunder, med poengene i behold.</li><li>Tastatur: W A S D svømmer, og musa bestemmer hvor du ser. Skjerm: venstre tommel svømmer, høyre ser deg rundt.</li><li>Du velger hvor lang runden er, fra ett til fem minutter. Når tiden er ute, er runden over.</li><li>Tips: dukk ned i tareskogen. Der slutter de store fiskene å jage deg.</li></ul><ul lang="en"><li>Swim into fish smaller than you to eat them and grow.</li><li>Anything bigger than you can eat you. Then you are back in five seconds, and you keep your score.</li><li>Keyboard: W A S D to swim, the mouse to look. Touch: left thumb swims, right thumb looks around.</li><li>You choose how long a round lasts, from one to five minutes. When time is up, the round is over.</li><li>Tip: duck low into the kelp. The big fish stop chasing you there.</li></ul><p class="kid" lang="nb">For de minste: velg «Veldig lett» før du trykker Start. Da er nesten alle fiskene mindre enn deg.</p><p class="kid" lang="en">For the youngest: pick “Very easy” before you press Start. Then almost every fish is smaller than you.</p></details>
+            <a class="play" href="/fishtank/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill Fishtank</span><span lang="en">Play Fishtank</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#b48cff">
+          <a class="shot" href="/swirls/" tabindex="-1" aria-hidden="true"><img src="assets/games/swirls.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/swirls-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>swirls</h3><p class="tagline"><span lang="nb">lys som driver og puster</span><span lang="en">drifting, breathing light</span></p></div></div>
+            <p class="about"><span lang="nb">Et rolig lerret av lys som driver og puster. Du tryller med fingeren, og lyset danser en stund før det blekner bort.</span><span lang="en">A calm canvas of light that drifts and breathes. You cast with your finger, and the light dances for a while before it fades away.</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Berøring · mus</span><span lang="en">Touch · mouse</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Det finnes ikke noe mål, ingen poeng og ingen klokke. Du kan ikke tape.</li><li>Velg en av de tolv virvlene i ringen for å begynne.</li><li>Trykk for å trylle fram lys, dra for å male en strøm, og sveip for å sende det av gårde.</li><li>Hold fingeren i ro for å lade opp, og slipp for å sende det ut.</li><li>‹ og › eller piltastene bytter virvel. Spillet starter stille, så skru opp lyden i menyen.</li></ul><ul lang="en"><li>There is no goal, no score and no clock. You cannot lose.</li><li>Pick one of the twelve effects on the ring to begin.</li><li>Tap to cast a light, drag to paint a stream, and flick to send one flying.</li><li>Hold your finger still to charge it up, then let go to send it off.</li><li>‹ and › or the arrow keys switch effect. It starts silent, so turn the sound up in the menu.</li></ul><p class="kid" lang="nb">Fint for de aller minste: ingenting å lese, ingenting å tape, og alt skjer der de tar på skjermen.</p><p class="kid" lang="en">Lovely for the very youngest: nothing to read, nothing to lose, and everything happens where they touch.</p></details>
+            <a class="play" href="/swirls/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill swirls</span><span lang="en">Play swirls</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#4a9be0">
+          <a class="shot" href="/dam_break/" tabindex="-1" aria-hidden="true"><img src="assets/games/dam_break.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/dam_break-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>DAM BREAK</h3><p class="tagline"><span lang="nb">Holder demningen din?</span><span lang="en">Will your dam hold?</span></p></div></div>
+            <p class="about"><span lang="nb">Et byggespill med ekte fysikk: bygg en demning av tre, stål, betong og kabel, og slipp løs flommen. Vannet finner hver minste glipe, og det er nesten like gøy å se demningen ryke som å se den holde.</span><span lang="en">A building game with real physics: build a dam from timber, steel, concrete and cable, then release the flood. The water finds every gap, and watching the dam burst is almost as much fun as watching it hold.</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Berøring · mus</span><span lang="en">Touch · mouse</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Hvert nivå har et mål, for eksempel å holde igjen nok vann lenge nok.</li><li>Bygg bjelker ved å dra fra de gule ankerpunktene. Hver bjelke koster penger, og budsjettet er begrenset.</li><li>Trykk «Slipp vannet» når du er klar. Holder demningen, låses neste nivå opp.</li><li>Brister den, får du vite hvorfor. Endre demningen og prøv igjen.</li><li>Tips: trekanter holder, firkanter faller sammen.</li></ul><ul lang="en"><li>Each level has a goal, such as holding back enough water for long enough.</li><li>Build beams by dragging from the yellow anchors. Every beam costs money, and the budget is limited.</li><li>Press “Release water” when you are ready. If the dam holds, the next level unlocks.</li><li>If it fails, the game tells you why. Edit the dam and try again.</li><li>Tip: triangles hold, squares fold.</li></ul><p class="kid" lang="nb">Nivåene er gåter for litt større barn. De minste kan leke i Sandkassen, der det ikke finnes regler.</p><p class="kid" lang="en">The levels are puzzles for older kids. The youngest can play in the Sandbox, where there are no rules.</p></details>
+            <a class="play" href="/dam_break/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill DAM BREAK</span><span lang="en">Play DAM BREAK</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#f0a63a">
+          <a class="shot" href="/supermine/" tabindex="-1" aria-hidden="true"><img src="assets/games/supermine.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/supermine-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>SUPERMINE</h3><p class="tagline"><span lang="nb">Gruvedrift mot klokka</span><span lang="en">Time Attack Mining</span></p></div></div>
+            <p class="about"><span lang="nb">Kjør en graver som vokser, rett ned gjennom jord, granitt og krystall. Steinen knuses i tusenvis av biter, og hver oppgradering blir skrudd fast på maskinen, så du ser den.</span><span lang="en">Drive a growing excavation rig straight down through dirt, granite and crystal. The rock breaks into thousands of pieces, and every upgrade bolts onto the machine where you can see it.</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Berøring · mus · tastatur</span><span lang="en">Touch · mouse · keyboard</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Graveren kjører av seg selv. Styr med A og D, piltastene, eller ved å dra eller trykke på sidene.</li><li>Kjør gjennom portene for å få oppgraderinger. Den vanskelige veien har hardere stein, men bedre oppgraderinger.</li><li>I «Mot klokka» er det du har samlet når tiden er ute, poengene dine. Noen porter gir ekstra sekunder.</li><li>I «Fritt spill» graver du så langt du vil, og hver port gir en oppgradering.</li></ul><ul lang="en"><li>The rig drives itself. Steer with A and D, the arrow keys, or by dragging or tapping either side.</li><li>Drive through gates for upgrades. The hard route means harder rock, but stronger upgrades.</li><li>In “Against the clock”, your haul when time runs out is your score. Some gates give extra seconds.</li><li>In “Free play” you dig as far as you like, and every gate pays an upgrade.</li></ul><p class="kid" lang="nb">For de minste passer «Fritt spill» best, for der er det ingen klokke som tikker.</p><p class="kid" lang="en">For the youngest, “Free play” is the one to pick: there is no clock ticking.</p></details>
+            <a class="play" href="/supermine/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill SUPERMINE</span><span lang="en">Play SUPERMINE</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#e3b04c">
+          <a class="shot" href="/supermine_adventure/" tabindex="-1" aria-hidden="true"><img src="assets/games/supermine_adventure.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/supermine_adventure-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>SUPERMINE ADVENTURE</h3><p class="tagline"><span lang="nb">Driv ditt eget gruvefirma</span><span lang="en">Deep Mining Campaign</span></p></div></div>
+            <p class="about"><span lang="nb">Kjøp rettighetene, fyll tanken og kjør en beltegraver ned gjennom lag på lag med stein. Hver tur er et lite veddemål: én meter til, eller hjem til heisen før dieselen tar slutt?</span><span lang="en">Buy the rights, fill the tank and drive a tracked excavation rig down through layer after layer of rock. Every trip is a small gamble: one more metre, or back to the lift before the fuel runs out?</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Berøring · mus · tastatur</span><span lang="en">Touch · mouse · keyboard</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Grav etter malm og fyll lasterommet. Kom deg tilbake til heisen og selg det du har.</li><li>Kjør med W A S D eller piltastene, eller dra hvor som helst på skjermen.</li><li>Går tanken tom eller skroget i stykker, blir lasten liggende nede i gruva. Du kan kjøre ned og hente den.</li><li>Bruk pengene i verkstedet. Bedre bor, større tank og mer kjøling tar deg dypere.</li><li>Tips: når dieselmåleren viser «SNU NÅ», er det på tide å kjøre mot heisen.</li></ul><ul lang="en"><li>Dig for ore and fill the hold. Get back to the lift and sell what you carry.</li><li>Drive with W A S D or the arrow keys, or drag anywhere on the screen.</li><li>If the fuel runs out or the hull gives way, your load stays down in the mine to fetch later.</li><li>Spend your money in the workshop. A better drill, a bigger tank and more cooling take you deeper.</li><li>Tip: when the fuel gauge says TURN BACK, head for the lift.</li></ul></details>
+            <a class="play" href="/supermine_adventure/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill SUPERMINE ADVENTURE</span><span lang="en">Play SUPERMINE ADVENTURE</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#e2a83a">
+          <a class="shot" href="/maxgear/" tabindex="-1" aria-hidden="true"><img src="assets/games/maxgear.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/maxgear-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>MAXGEAR</h3><p class="tagline"><span lang="nb">Full fart gjennom portene</span><span lang="en">Gate Rush</span></p></div></div>
+            <p class="about"><span lang="nb">Et steampunk-løp der kanonene skyter av seg selv: styr gjennom oppgraderingsporter, bygg opp ildkraften og knus Jernkolossen. Det morsomme er å se noen få skudd vokse til en hel storm av kuler.</span><span lang="en">A steampunk road race where the guns fire by themselves: steer through upgrade gates, build up your firepower and take down the IRONCLAD. The fun is watching a few shots grow into a whole storm of shells.</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Berøring · mus · tastatur</span><span lang="en">Touch · mouse · keyboard</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Du skyter automatisk. Styr til venstre og høyre med A og D, piltastene eller ved å dra.</li><li>Grønne porter er bra, røde er dårlige, og lilla gir deg noe og tar noe.</li><li>Kampanjen har fire nivåer. Etter hvert nivå velger du to oppgraderinger du vil beholde.</li><li>Går skroget i stykker, er runden over. Start nivået på nytt og prøv igjen.</li><li>Tips: skyt på en rød port til den blir ufarlig.</li></ul><ul lang="en"><li>Firing is automatic. Steer left and right with A and D, the arrow keys, or by dragging.</li><li>Green gates are good, red ones are bad, and purple ones give something and take something.</li><li>The campaign has four levels. After each one, you choose two upgrades to keep.</li><li>If your hull is wrecked, the run is over. Restart the level and try again.</li><li>Tip: keep shooting a red gate until it is harmless.</li></ul></details>
+            <a class="play" href="/maxgear/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill MAXGEAR</span><span lang="en">Play MAXGEAR</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#39daf2">
+          <a class="shot" href="/neonfox/" tabindex="-1" aria-hidden="true"><img src="assets/games/neonfox.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/neonfox-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>NeonFox</h3><p class="tagline"><span lang="nb">Neon-Kurve for kuleryttere</span><span lang="en">Neon Kurve for orb riders</span></p></div></div>
+            <p class="about"><span lang="nb">Rever rir på lysende kuler og legger igjen et neonspor etter seg. Arenaen fylles fortere enn du tror, og alt handler om å være den siste som fortsatt rir.</span><span lang="en">Foxes ride glowing orbs and leave a neon trail behind them. The arena fills up faster than you think, and it all comes down to being the last one still riding.</span></p>
+            <ul class="meta"><li><span lang="nb">1–2 spillere på én skjerm, opptil 6 på nett</span><span lang="en">1–2 players on one screen, up to 6 online</span></li><li><span lang="nb">Berøring · tastatur</span><span lang="en">Touch · keyboard</span></li><li class="online"><span lang="nb">Spill over nett</span><span lang="en">Play online</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Reven din stopper aldri. Du svinger til venstre og høyre med piltastene eller knappene på skjermen.</li><li>Treffer du et spor eller veggen, er du ute av runden.</li><li>Hver gang noen krasjer, får alle som fortsatt rir, ett poeng. Den som først når poengmålet, vinner kampen.</li><li>To spillere kan dele tastaturet. Spiller to styrer med A og D.</li><li>Tips: Sporene har små hull innimellom. Treffer du et hull, smetter du gjennom.</li></ul><ul lang="en"><li>Your fox never stops. You steer left and right with the arrow keys or the buttons on screen.</li><li>Hit a trail or the wall and you are out of the round.</li><li>Every time someone crashes, everyone still riding gets a point. First to the target wins the match.</li><li>Two players can share a keyboard. Player two steers with A and D.</li><li>Tip: the trails have small gaps now and then. Time it right and you slip through.</li></ul></details>
+            <a class="play" href="/neonfox/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill NeonFox</span><span lang="en">Play NeonFox</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#f4b34d">
+          <a class="shot" href="/lobbots/" tabindex="-1" aria-hidden="true"><img src="assets/games/lobbots.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/lobbots-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>LOBBOTS</h3><p class="tagline"><span lang="nb">Store roboter, enda større skudd.</span><span lang="en">Big robots, bigger lobs.</span></p></div></div>
+            <p class="about"><span lang="nb">Kjemperoboter står på en ås og skyter granater over til hverandre, én tur om gangen. Etter hver runde kan du bruke boltene dine på noe helt urimelig.</span><span lang="en">Giant robots stand on a hill and lob shells at each other, one turn at a time. After every round you can spend your bolts on something unreasonable.</span></p>
+            <ul class="meta"><li><span lang="nb">1–10 spillere</span><span lang="en">1–10 players</span></li><li><span lang="nb">Berøring · mus · tastatur</span><span lang="en">Touch · mouse · keyboard</span></li><li class="online"><span lang="nb">Spill over nett</span><span lang="en">Play online</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Når det er din tur, velger du våpen, vinkel og kraft. Så trykker du Skyt.</li><li>Dra sidelengs for å sikte, og opp eller ned for kraft. På tastaturet bruker du pilene og mellomrom.</li><li>Vinden dytter granaten. Se på pilen og tallet før du skyter.</li><li>Den siste roboten som står, vinner runden. Etterpå handler alle i butikken.</li><li>Tips: Forrige skudd ligger igjen som et spøkelse mens du sikter. Juster ut fra hvor det landet.</li></ul><ul lang="en"><li>On your turn, pick a weapon, an angle and a power. Then press Fire.</li><li>Drag sideways to aim, and up or down for power. On a keyboard, use the arrows and Space.</li><li>The wind pushes the shell. Check the arrow and the number before you shoot.</li><li>The last robot standing wins the round. Then everyone goes shopping.</li><li>Tip: your last shot stays on screen as a ghost while you aim. Adjust from where it landed.</li></ul></details>
+            <a class="play" href="/lobbots/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill LOBBOTS</span><span lang="en">Play LOBBOTS</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#d5ad63">
+          <a class="shot" href="/minimaze/" tabindex="-1" aria-hidden="true"><img src="assets/games/minimaze.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/minimaze-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>MiniMaze</h3><p class="tagline"><span lang="nb">Vipp. Trill. Finn veien.</span><span lang="en">Tilt. Roll. Find your way.</span></p></div></div>
+            <p class="about"><span lang="nb">Vipp en labyrint av tre, og trill stålkula forbi hullene og ned i messingkoppen. På mobil og nettbrett vipper du selve skjermen, som om brettet lå i hendene dine.</span><span lang="en">Tilt a wooden maze and roll the steel marble past the holes into the brass cup. On a phone or tablet you tilt the screen itself, as if the board were in your hands.</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Vipping · berøring · mus · tastatur · håndkontroll</span><span lang="en">Tilt · touch · mouse · keyboard · gamepad</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Trill stålkula ned i messingkoppen.</li><li>Vipp mobilen eller nettbrettet. Du kan også dra i brettet, eller bruke piltaster, WASD eller håndkontroll.</li><li>Faller kula i et hull, begynner du på nytt fra start. Det finnes ingen liv å miste.</li><li>Etter hvert kommer fjærer som kaster kula, tannhjul som snurrer, og knapper som åpner porter.</li><li>Tips: Triller kula av seg selv? Velg «Nullstill tiltingen» i menyen.</li></ul><ul lang="en"><li>Roll the steel marble into the brass cup.</li><li>Tilt your phone or tablet. You can also drag the board, or use the arrow keys, WASD or a gamepad.</li><li>Drop into a hole and you start again from the beginning. There are no lives to lose.</li><li>Later mazes add springs that throw the marble, gears that spin, and buttons that open gates.</li><li>Tip: marble rolling on its own? Pick Reset the tilt in the menu.</li></ul><p class="kid" lang="nb">De to første labyrintene har ingen hull, så selv en femåring kommer i gang. Ingen klokke stresser deg underveis.</p><p class="kid" lang="en">The first two mazes have no holes, so even a five-year-old can get going. No clock hurries you along the way.</p></details>
+            <a class="play" href="/minimaze/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill MiniMaze</span><span lang="en">Play MiniMaze</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#ffc94a">
+          <a class="shot" href="/zoodoku/" tabindex="-1" aria-hidden="true"><img src="assets/games/zoodoku.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/zoodoku-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>Zoodoku</h3><p class="tagline"><span lang="nb">Sudoku som starter med en rev.</span><span lang="en">Sudoku, starting with a fox.</span></p></div></div>
+            <p class="about"><span lang="nb">Sudoku for unge gåteløsere. Du begynner med å dra små dyr inn på et lite 4×4-brett, og klatrer helt opp til klassisk 9×9 med tall.</span><span lang="en">Sudoku for young puzzlers. You start by dragging little animals onto a small 4×4 board, and climb all the way to classic 9×9 with numbers.</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Berøring · mus · tastatur</span><span lang="en">Touch · mouse · keyboard</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Hver rad, kolonne og boks skal ha ett av hvert dyr, eller hvert tall på de store brettene.</li><li>Dra et dyr til en rute, eller trykk på ruten og så på dyret. På tastaturet: piler og tall.</li><li>To like i samme rad, kolonne eller boks får rød kant, så du ser hva som ikke passer.</li><li>Brettet er løst når alle rutene er riktige. Da hopper alle dyrene.</li><li>Tips: Står du fast? Trykk på Tips. Først får du et lite hint, og mer hjelp hvis du vil.</li></ul><ul lang="en"><li>Every row, column and box needs one of each animal, or each number on the bigger boards.</li><li>Drag an animal onto a square, or tap the square and then the animal. On a keyboard: arrows and numbers.</li><li>Two of the same in a row, column or box get a red outline, so you can see what clashes.</li><li>The board is solved when every square is right. Then all the animals hop.</li><li>Tip: stuck? Press Hint. You get a small nudge first, and more help if you want it.</li></ul><p class="kid" lang="nb">Laget for barn fra rundt sju år. Et kort kurs viser reglene, og det er ingen klokke, ingen poeng og ingen feil som teller.</p><p class="kid" lang="en">Made for kids from about seven. A short tutorial shows the rules, and there is no clock, no score and no mistake counter.</p></details>
+            <a class="play" href="/zoodoku/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill Zoodoku</span><span lang="en">Play Zoodoku</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#3be8ff">
+          <a class="shot" href="/geometry_pong/" tabindex="-1" aria-hidden="true"><img src="assets/games/geometry_pong.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/geometry_pong-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>Geometry Pong</h3><p class="tagline"><span lang="nb">Pong med flere sider.</span><span lang="en">Pong with more sides.</span></p></div></div>
+            <p class="about"><span lang="nb">Pong på en mangekant med to til åtte sider, og hver side er noens mål. Skru opp Kaos, så dukker det opp ekstrakrefter som ballen kan fange.</span><span lang="en">Pong on a polygon with two to eight sides, and every side is somebody&#x27;s goal. Turn up Chaos and power-ups appear for the ball to catch.</span></p>
+            <ul class="meta"><li><span lang="nb">1–8 spillere</span><span lang="en">1–8 players</span></li><li><span lang="nb">Berøring · tastatur</span><span lang="en">Touch · keyboard</span></li><li class="online"><span lang="nb">Spill over nett</span><span lang="en">Play online</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Forsvar din egen side, og prøv å få ballen forbi de andre.</li><li>Legg en finger på kanten din, eller bruk ← → og A D. En robot tar sidene ingen spiller på.</li><li>Går ballen inn hos noen, får den som traff den sist, ett poeng. Selvmål gir ingen poeng.</li><li>Den som først når poengmålet, vinner. Ingen blir slått ut underveis.</li><li>Tips: Ballen har fargen til den som traff den sist, så du ser hvem målet går til.</li></ul><ul lang="en"><li>Defend your own side, and get the ball past everyone else.</li><li>Put a finger on your edge, or use ← → and A D. A robot plays any side nobody takes.</li><li>When a ball goes in, whoever touched it last scores a point. An own goal scores nothing.</li><li>First to the target wins. Nobody is knocked out along the way.</li><li>Tip: a ball wears the colour of whoever hit it last, so you can see who it will score for.</li></ul><p class="kid" lang="nb">Ingen blir slått ut, og en robot tar over hvis du slipper, så store og små kan spille sammen rundt ett nettbrett.</p><p class="kid" lang="en">Nobody is knocked out, and a robot takes over if you let go, so big and small can play together round one tablet.</p></details>
+            <a class="play" href="/geometry_pong/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill Geometry Pong</span><span lang="en">Play Geometry Pong</span></a>
+          </div>
+        </article>
+        <article class="card" style="--accent:#f4b63d">
+          <a class="shot" href="/heist/" tabindex="-1" aria-hidden="true"><img src="assets/games/heist.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><img class="icon" src="assets/games/heist-icon.png" alt="" width="60" height="60" loading="lazy"><div><h3>HEIST</h3><p class="tagline"><span lang="nb">Knekk den før politiet kommer.</span><span lang="en">Crack it before the cops come.</span></p></div></div>
+            <p class="about"><span lang="nb">Et tegneseriespill om å knekke safer. Hver jobb er et kappløp mot politibilen, og byttet bruker du på bedre verktøy.</span><span lang="en">A comic-book safecracking game. Every job is a race against the police car, and you spend the take on better tools.</span></p>
+            <ul class="meta"><li><span lang="nb">1 spiller</span><span lang="en">1 player</span></li><li><span lang="nb">Berøring · mus · tastatur</span><span lang="en">Touch · mouse · keyboard</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Velg en jobb, og åpne alle låsene før politibilen kommer. Klokka starter når du rører den første.</li><li>Dirk opp låser, vri på tallskiver, tast inn koder, klipp ledninger og snik deg forbi fellene.</li><li>Trykk og dra med fingeren eller musa. Tastaturet virker også.</li><li>Feil koster sekunder. Blir du tatt, mister du bare dingsene du brukte.</li><li>Tips: Kjøp bedre verktøy i butikken. Da blir låsene snillere.</li></ul><ul lang="en"><li>Pick a job and open every lock before the police car arrives. The clock starts at your first touch.</li><li>Pick locks, turn dials, punch in codes, cut wires and sneak past the traps.</li><li>Tap and drag with a finger or the mouse. The keyboard works too.</li><li>Mistakes cost seconds. Get busted and you lose only the gadgets you used.</li><li>Tip: buy better tools in the shop. They make the locks kinder.</li></ul></details>
+            <a class="play" href="/heist/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill HEIST</span><span lang="en">Play HEIST</span></a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="under-arbeid">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span lang="nb">Ikke i arkaden ennå</span><span lang="en">Not in the arcade yet</span></p>
+        <h2><span lang="nb">Under arbeid</span><span lang="en">In the works</span></h2>
+        <p>
+          <span lang="nb">Spill som allerede ligger ute og kan spilles, men som ikke er ferdige. De kan endre seg, gå i stykker eller forsvinne, og det er en del av moroa.</span>
+          <span lang="en">Games that are already out and playable, but not finished. They may change, break or disappear, and that is part of the fun.</span>
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card" style="--accent:#ff7ab8">
+          <a class="shot" href="/tiltlink/" tabindex="-1" aria-hidden="true"><span class="badge"><span lang="nb">Uferdig</span><span lang="en">Unfinished</span></span><img src="assets/games/tiltlink.webp" alt="" width="960" height="600" loading="lazy"></a>
+          <div class="card-body">
+            <div class="title"><div class="icon blank" aria-hidden="true">T</div><div><h3>TiltLink</h3><p class="tagline"><span lang="nb">Telefonen er kontrollen</span><span lang="en">Your phone is the controller</span></p></div></div>
+            <p class="about"><span lang="nb">En liten demo der hver telefon blir en klatt på storskjermen: vipp for å trille, og send ut en støtbølge mot de andre. Den er fortsatt under arbeid, og foreløpig bare på engelsk.</span><span lang="en">A small demo where every phone becomes a blob on the big screen: tilt to roll, and pulse to knock the others back. It is still a work in progress, and only in English for now.</span></p>
+            <ul class="meta"><li><span lang="nb">1–8 spillere, pluss opptil 8 roboter</span><span lang="en">1–8 players, plus up to 8 bots</span></li><li><span lang="nb">Telefonen: vipp eller dra</span><span lang="en">Phone: tilt or drag</span></li><li class="online"><span lang="nb">Spill over nett</span><span lang="en">Play online</span></li></ul>
+            <details><summary><span lang="nb">Slik spiller du</span><span lang="en">How to play</span></summary><ul lang="nb"><li>Åpne spillet på en stor skjerm og velg «This is the big screen». Telefonene skanner QR-koden for å bli med.</li><li>Vipp telefonen for å trille. Hold den flatt, som et brett.</li><li>Trykk «Pulse» når du er helt inntil noen. Alle innenfor ringen mister et liv.</li><li>Alle har ti liv. Den siste klatten som er igjen, vinner.</li><li>Tips: under «Your sound» kan du rope inn din egen angrepslyd.</li></ul><ul lang="en"><li>Open it on a big screen and choose “This is the big screen”. Phones scan the QR code to join.</li><li>Tilt your phone to roll. Hold it flat, like a tray.</li><li>Press “Pulse” right next to someone. Everyone inside the ring loses a life.</li><li>Everyone has ten lives. The last blob standing wins.</li><li>Tip: under “Your sound” you can record your own attack shout.</li></ul></details>
+            <a class="play" href="/tiltlink/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z"/></svg><span lang="nb">Spill TiltLink</span><span lang="en">Play TiltLink</span></a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="om">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span lang="nb">Om Gopher Cloud</span><span lang="en">About Gopher Cloud</span></p>
+        <h2><span lang="nb">Spill slik de var før</span><span lang="en">Games the way they used to be</span></h2>
+        <p>
+          <span lang="nb">Du slår det på, du spiller, og ingenting står i veien. Det er hele ideen, og dette er det den betyr i praksis.</span>
+          <span lang="en">You turn it on, you play, and nothing gets in the way. That is the whole idea, and this is what it means in practice.</span>
+        </p>
+      </div>
+
+      <div class="principles">
+        <div class="principle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7m0 0H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7Zm0 0h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7Z"/></svg>
+          <h3><span lang="nb">Gratis for alle</span><span lang="en">Free for everyone</span></h3>
+          <p><span lang="nb">Hvert spill er gratis, hele veien. Ingen nivåer bak betaling, ingen abonnement.</span><span lang="en">Every game is free, all the way through. No levels behind a payment, no subscription.</span></p>
+        </div>
+        <div class="principle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 3 18 18"/></svg>
+          <h3><span lang="nb">Ingen reklame</span><span lang="en">No ads</span></h3>
+          <p><span lang="nb">Ingen annonser og ingen varsler. Ingenting som avbryter spillet.</span><span lang="en">No adverts and no push notifications. Nothing that interrupts play.</span></p>
+        </div>
+        <div class="principle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6m17-3 3 3"/></svg>
+          <h3><span lang="nb">Ingen mas</span><span lang="en">No nagging</span></h3>
+          <p><span lang="nb">Ingen daglige rekker, ingen nedtellinger, ingen belønning for å møte opp. Kom når du vil.</span><span lang="en">No daily streaks, no countdowns, no rewards for showing up. Come back when you like.</span></p>
+        </div>
+        <div class="principle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z"/><path d="m9 12 2 2 4-4"/></svg>
+          <h3><span lang="nb">Ingen sporing</span><span lang="en">No tracking</span></h3>
+          <p><span lang="nb">Ingen analyse og ingen informasjonskapsler. Det spillene husker, blir på enheten din.</span><span lang="en">No analytics and no cookies. What the games remember stays on your device.</span></p>
+        </div>
+        <div class="principle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6M3 3l18 18"/></svg>
+          <h3><span lang="nb">Ingen konto</span><span lang="en">No accounts</span></h3>
+          <p><span lang="nb">Ingenting å melde seg på og ingenting å installere. Åpne og spill.</span><span lang="en">Nothing to sign up for and nothing to install. Open it and play.</span></p>
+        </div>
+        <div class="principle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16l-1.5-9-4.5 4-2-7-2 7-4.5-4Z"/><path d="M4 21h16"/></svg>
+          <h3><span lang="nb">Aldri betal for å vinne</span><span lang="en">Never pay to win</span></h3>
+          <p><span lang="nb">Hvis arkaden en dag skal betale for seg, blir det med tullete hatter og skyvenner. Aldri en fordel, aldri en låst del av et spill.</span><span lang="en">If the arcade ever pays for itself, it will be with silly hats and cloud companions. Never an advantage, never a locked part of a game.</span></p>
+        </div>
+      </div>
+
+      <div class="letter">
+        <div class="portrait"><img src="assets/gopher.png" width="708" height="890" alt="" loading="lazy"></div>
+        <div class="letter-text">
+          <h3><span lang="nb">For foreldre og foresatte</span><span lang="en">For parents and guardians</span></h3>
+          <p class="lead" lang="nb">Jeg er utvikler og far til to gutter, og jeg laget Gopher Cloud Arcade for at det skulle føles som spillene jeg vokste opp med: du slår det på, du spiller, og ingenting står i veien.</p><p class="lead" lang="en">I’m a developer and a father of two boys, and I built Gopher Cloud Arcade to feel like the games I grew up with: you turn it on, you play, and nothing gets in the way.</p>
+          <p lang="nb">Derfor finnes det ingen reklame og ingen varsler her. Ingenting maser på barnet ditt om å komme tilbake: ingen daglige rekker å holde ved like, ingen nedtellinger, ingen belønning for å møte opp. Det finnes ingen kontoer og ingenting å melde seg på, og alle spillene er gratis for alle.</p><p lang="en">So there are no ads and no push notifications. Nothing here nags your child to come back: no daily streaks to keep up, no countdowns, no rewards for showing up. There are no accounts and nothing to sign up for, and every game is free to play for everyone.</p>
+          <p lang="nb">Jeg håper det kan bli et sted å dele: finn et spill sammen, hei på hverandre, og la barna finne sine egne favoritter og sitt eget tempo. Her er det plass til å vandre, tulle eller bare sitte i skyene en stund.</p><p lang="en">I hope it can be a place to share: discover a game together, cheer each other on, and let children find their own favourites and their own pace. There’s room to wander, be silly, or just sit in the clouds for a while.</p>
+          <p lang="nb">Noen av spillene kan spilles sammen over internett, og de kjører i nettleseren på nettbrett, telefoner og datamaskiner, så en venn, et søskenbarn eller en besteforelder kan være med fra det de allerede har i hendene. Én spiller deler en romkode, de andre trykker den inn, og det er alt: ingenting å installere, ingen å registrere.</p><p lang="en">Some of the games play together over the internet, and they run in a browser on tablets, phones and computers alike, so a friend, a cousin or a grandparent can join from whatever they already have in their hands. One player shares a room code, the others enter it, and that is the whole setup: nothing to install, nobody to sign up.</p>
+          <p lang="nb">Jeg kommer ikke til å selge dataene dine. Jeg vil ikke engang ha dem. Det finnes ingen analyse her og ingen sporing av noe slag, og ingenting blir stille samlet inn mens barnet ditt spiller. Det arkaden husker er lite, og det blir værende på enheten du spiller på: om lyden er på, hvor skarp du vil ha himmelen. Hvis kontoer og lagret fremgang kommer en dag, er det der de blir lagret også.</p><p lang="en">I won’t sell your data. I don’t even want it. There is no analytics here and no tracking of any kind, and nothing is quietly gathered up while your child plays. What the arcade remembers is small, and it stays on the device you are playing on: whether the sound is on, how sharp you like the sky. If accounts and saved progress arrive one day, that is where they will be saved too.</p>
+          <p lang="nb">Og hvis noe forlater enheten, som et brev barnet ditt velger å legge i arkadens postkasse, inneholder det det de skrev, hvilket spill det handlet om, og et tilfeldig navn arkaden har gitt denne nettleseren — noe sånt som gc-7f3q-k2m9. Det navnet er hvordan svaret mitt finner veien tilbake til riktig postkasse, og det betyr at jeg kan se at to brev kom fra samme sted, som er det som gjør en samtale mulig i det hele tatt. Det er også alt jeg noen gang vet: ikke noe ekte navn, ingen konto, ingen e-post, ingenting om hvem eller hvor du er. Det hører til en nettleser og ikke til en person, og tømmer du nettleserens data, er det borte for godt. Selskapet som bringer posten for meg, Forminit, oppbevarer brevene på servere i Irland og noterer, som alle postvesen, hvilken internettadresse de kom fra. Jeg bruker den aldri til noe, og jeg sletter brevene når jeg har svart på dem.</p><p lang="en">And if something leaves the device, like a letter your child chooses to post in the arcade’s mailbox, it carries what they wrote, which game it was about, and a random name the arcade gave this browser — something like gc-7f3q-k2m9. That name is how my answer finds its way back to the right mailbox, and it does mean I can tell that two letters came from the same one, which is what makes a conversation possible at all. It is also all I ever know: no real name, no account, no email, nothing about who or where you are. It belongs to a browser rather than to a person, and clearing that browser’s data ends it for good. The company that carries the post for me, Forminit, keeps the letters on servers in Ireland and, like any postal service, notes the internet address they came from. I never use it for anything, and I delete letters once I have answered them.</p>
+          <p lang="nb">Alt i arkaden er gratis i dag. Hvis den noen gang skal betale for seg selv, blir det gjennom tullete hatter og skyvenner for alle som har lyst til å bidra. Aldri et abonnement, aldri en pris på et spill, og aldri noe som gir én spiller en fordel eller låser en del av et spill.</p><p lang="en">Everything in the arcade is free today. If it ever pays for itself, it will be through silly hats and cloud companions for anyone who feels like chipping in. Never a subscription, never a price on a game, and never anything that gives one player an advantage or locks part of a game away.</p>
+          <p lang="nb">Arkaden er fortsatt i beta og vokser. Spillene kan ha ulikt tempo og ulik vanskelighetsgrad, så jeg inviterer deg til å utforske sammen med barnet ditt og velge det som passer for familien deres.</p><p lang="en">The arcade is still in beta and growing. Games can differ in pace and challenge, so I invite you to explore alongside your child and choose what feels right for your family.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <p>© 2026 Gopher Cloud · <span lang="nb">Gratis · ingen reklame · ingen sporing</span><span lang="en">Free · no ads · no tracking</span></p>
+    <p>
+      <span lang="nb">Språkvalget ditt lagres bare i denne nettleseren.</span>
+      <span lang="en">Your language choice is stored only in this browser.</span>
+      · <a href="https://github.com/ivaruf"><span lang="nb">Kildekoden på GitHub</span><span lang="en">Source on GitHub</span></a>
+    </p>
+  </div>
+</footer>
 </html>
